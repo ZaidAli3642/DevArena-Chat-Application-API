@@ -5,6 +5,12 @@ const LoginSchema = Joi.object({
   password: Joi.string().min(8).max(16).required().label("Password"),
 });
 
-const validateLogin = (body) => LoginSchema.validate(body);
+const validateLogin = (req, res, next) => {
+  const { error } = LoginSchema.validate(req.body);
+
+  if (error) return res.status(400).json({ message: error.details[0].message });
+
+  next();
+};
 
 module.exports = validateLogin;

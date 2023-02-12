@@ -5,13 +5,8 @@ const generateToken = require("../../utils/generate-web-token");
 const { User } = require("../models");
 const { validateLogin } = require("../validations");
 
-router.post("/", async (req, res) => {
+router.post("/login", validateLogin, async (req, res) => {
   try {
-    const { error } = validateLogin(req.body);
-
-    if (error)
-      return res.status(400).json({ message: error.details[0].message });
-
     const user = await User.findOne({ email: req.body.email });
 
     if (!user) return res.status(404).json({ message: "User not found." });
@@ -22,6 +17,7 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ message: "Password not matched." });
 
     const token = generateToken({
+      _id: user._id,
       name: user.name,
       email: user.email,
       username: user.username,

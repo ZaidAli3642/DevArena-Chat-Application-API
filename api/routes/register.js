@@ -6,27 +6,29 @@ const { User } = require("../models");
 const validateRegisteredUser = require("../validations/register");
 
 // Register Route
-router.post("/", async (req, res) => {
+router.post("/register", async (req, res) => {
   const { error } = validateRegisteredUser(req.body);
 
-  if (error) return res.status(400).json({ message: error.details[0].message });
   try {
+    if (error)
+      return res.status(400).json({ message: error.details[0].message });
+
     const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(req.body.password, salt);
 
     const user = new User({
-      name: req.body.name,
       username: req.body.username,
       email: req.body.email,
       password: hash,
     });
 
-    await user.save();
+    const savedUser = await user.save();
 
     const token = generateToken({
-      name: req.body.name,
-      username: req.body.username,
-      email: req.body.email,
+      _id: savedUser._id,
+      name: savedUser.name,
+      username: savedUser.username,
+      email: savedUser.email,
     });
 
     res.setHeader("x-auth-token", token).status(201).json({
@@ -34,7 +36,12 @@ router.post("/", async (req, res) => {
       message: "User Registered",
     });
   } catch (error) {
-    res.status(500).send(error);
+    if (error.code === 11000 && error.keyPattern?.username)
+      return res.status(500).json({ message: "username is already taken." });
+    if (error.code === 11000 && error.keyPattern?.email)
+      return res.status(500).json({ message: "Email is already registered." });
+
+    res.status(500).json({ message: "Something went wrong.", error });
   }
 });
 
