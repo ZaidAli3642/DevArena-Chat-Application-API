@@ -3,7 +3,13 @@ const express = require("express");
 const Cors = require("cors");
 
 const mondoDB = require("./startup/mongodb");
-const { RegisterRoute, LoginRoute, UserRoute } = require("./api/routes");
+const {
+  RegisterRoute,
+  LoginRoute,
+  UserRoute,
+  ConverstaionRoute,
+  MessagesRoute,
+} = require("./api/routes");
 
 const app = express();
 
@@ -16,6 +22,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api", RegisterRoute);
 app.use("/api", LoginRoute);
 app.use("/api", UserRoute);
+app.use("/api", ConverstaionRoute);
+app.use("/api", MessagesRoute);
 
 const port = config.get("PORT") || 3000;
 

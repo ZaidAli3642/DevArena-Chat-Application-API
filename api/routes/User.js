@@ -4,6 +4,7 @@ const User = require("../models/User");
 const handleErrors = require("../../utils/errors");
 const { auth } = require("../middleware");
 const validateUser = require("../validations/user");
+const { validateSearch } = require("../validations");
 
 router.put("/user/:userId", auth, validateUser, async (req, res) => {
   const { userId } = req.params;
@@ -28,6 +29,26 @@ router.put("/user/:userId", auth, validateUser, async (req, res) => {
   } catch (error) {
     const err = handleErrors(error);
     res.status(500).json({ success: false, message: err });
+  }
+});
+
+router.get("/users/:search", auth, validateSearch, async (req, res) => {
+  try {
+    const { search } = req.params;
+
+    const searchResult = await User.find({
+      $or: [
+        { username: { $regex: new RegExp(search, "i") } },
+        { name: { $regex: new RegExp(search, "i") } },
+      ],
+    });
+
+    res
+      .status(200)
+      .json({ success: true, message: "Search results", searchResult });
+  } catch (error) {
+    const err = handleErrors(error);
+    res.status(500).json({ success: false, err: err });
   }
 });
 
