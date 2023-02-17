@@ -19,6 +19,9 @@ const UserModel = new mongoose.Schema({
     minLength: 8,
     required: true,
   },
+  imageUri: {
+    type: String,
+  },
 });
 
 module.exports = mongoose.model("User", UserModel);

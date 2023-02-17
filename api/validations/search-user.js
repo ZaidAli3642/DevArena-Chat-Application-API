@@ -1,8 +1,7 @@
 const Joi = require("joi");
 
 const UserSchema = Joi.object({
-  name: Joi.string().label("Name"),
-  username: Joi.string().label("Username"),
+  search: Joi.string().required().label("Search"),
 });
 
 const validateSearch = (req, res, next) => {

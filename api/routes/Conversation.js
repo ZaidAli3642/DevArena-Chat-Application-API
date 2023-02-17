@@ -37,7 +37,11 @@ router.get("/conversation/:userId", auth, async (req, res) => {
     const converstation = await Conversation.aggregate([
       { $match: { senderId: mongoose.Types.ObjectId(userId) } },
       {
-        $lookup: lookup("messages", "_id", "conversationId", "messages"),
+        $lookup: {
+          ...lookup("messages", "_id", "conversationId", "messages"),
+
+          pipeline: [{ $sort: { _id: -1 } }, { $limit: 1 }],
+        },
       },
       {
         $lookup: lookup("users", "senderId", "_id", "sender"),
