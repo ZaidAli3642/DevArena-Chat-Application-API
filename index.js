@@ -1,5 +1,6 @@
 const config = require("config");
 const express = require("express");
+const http = require("http");
 const Cors = require("cors");
 
 const mondoDB = require("./startup/mongodb");
@@ -10,6 +11,7 @@ const {
   ConverstaionRoute,
   MessagesRoute,
 } = require("./api/routes");
+const socketService = require("./utils/socket");
 
 const app = express();
 
@@ -24,7 +26,10 @@ app.use("/api", LoginRoute);
 app.use("/api", UserRoute);
 app.use("/api", ConverstaionRoute);
 app.use("/api", MessagesRoute);
-
 const port = config.get("PORT") || 3000;
 
-app.listen(port, () => console.log("Listening on port # " + port));
+const server = http.createServer(app);
+
+socketService(server);
+
+server.listen(port, () => console.log("Listening on port # " + port));

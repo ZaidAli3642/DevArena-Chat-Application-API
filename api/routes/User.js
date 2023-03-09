@@ -4,7 +4,6 @@ const User = require("../models/User");
 const handleErrors = require("../../utils/errors");
 const { auth } = require("../middleware");
 const validateUser = require("../validations/user");
-const { validateSearch } = require("../validations");
 
 router.put("/user/:userId", auth, validateUser, async (req, res) => {
   const { userId } = req.params;
@@ -33,11 +32,13 @@ router.put("/user/:userId", auth, validateUser, async (req, res) => {
   }
 });
 
-router.get("/users/search", auth, async (req, res) => {
+router.get("/users/search/:userId", auth, async (req, res) => {
   try {
     const { search } = req.query;
+    const { userId } = req.params;
 
-    console.log("Search : ", search);
+    console.log("user id: ", userId);
+
     if (!search)
       return res
         .status(404)
@@ -45,8 +46,8 @@ router.get("/users/search", auth, async (req, res) => {
 
     const searchResult = await User.find({
       $or: [
-        { username: { $regex: new RegExp(search, "i") } },
-        { name: { $regex: new RegExp(search, "i") } },
+        { username: { $regex: new RegExp(search, "i") }, _id: { $ne: userId } },
+        { name: { $regex: new RegExp(search, "i") }, _id: { $ne: userId } },
       ],
     }).select("username email name _id imageUri");
 

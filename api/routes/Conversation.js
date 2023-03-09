@@ -8,21 +8,36 @@ const { validateConversation } = require("../validations");
 const lookup = require("../../utils/lookup");
 
 // CREATE CONVERSATION OF SPECIFIC USER
-router.post("/converstaion", auth, validateConversation, async (req, res) => {
+router.post("/conversation", auth, validateConversation, async (req, res) => {
   try {
-    const { senderId, receiverId } = req.body;
-
-    const conversation = new Conversation({
-      conversationId: mongoose.Types.ObjectId(),
-      senderId: senderId,
-      receiverId: receiverId,
+    const conversation = await Conversation.find({
+      members: {
+        $all: [
+          mongoose.Types.ObjectId(req.body.senderId),
+          mongoose.Types.ObjectId(req.body.receiverId),
+        ],
+      },
     });
 
-    await conversation.save();
+    if (conversation.length > 0)
+      return res.status(200).json({
+        message: "Conversation already created.",
+        conversation,
+      });
+
+    const newConversation = new Conversation({
+      members: [
+        mongoose.Types.ObjectId(req.body.senderId),
+        mongoose.Types.ObjectId(req.body.receiverId),
+      ],
+    });
+
+    const createdConversation = await newConversation.save();
 
     res.status(200).json({
       success: true,
       message: "conversation created!",
+      conversation: createdConversation,
     });
   } catch (error) {
     const err = handleErrors(error);
@@ -34,8 +49,8 @@ router.post("/converstaion", auth, validateConversation, async (req, res) => {
 router.get("/conversation/:userId", auth, async (req, res) => {
   try {
     const { userId } = req.params;
-    const converstation = await Conversation.aggregate([
-      { $match: { senderId: mongoose.Types.ObjectId(userId) } },
+    const conversation = await Conversation.aggregate([
+      { $match: { members: { $in: [mongoose.Types.ObjectId(userId)] } } },
       {
         $lookup: {
           ...lookup("messages", "_id", "conversationId", "messages"),
@@ -44,11 +59,9 @@ router.get("/conversation/:userId", auth, async (req, res) => {
         },
       },
       {
-        $lookup: lookup("users", "senderId", "_id", "sender"),
+        $lookup: lookup("users", "members", "_id", "users"),
       },
-      {
-        $lookup: lookup("users", "receiverId", "_id", "receiver"),
-      },
+      { $match: { "messages.0": { $exists: true } } },
       {
         $project: {
           _id: 1,
@@ -58,19 +71,16 @@ router.get("/conversation/:userId", auth, async (req, res) => {
           "messages.conversationId": 1,
           "messages._id": 1,
           "messages.message": 1,
-          "sender._id": 1,
-          "sender.email": 1,
-          "sender.username": 1,
-          "sender.name": 1,
-          "receiver._id": 1,
-          "receiver.email": 1,
-          "receiver.username": 1,
-          "receiver.name": 1,
+          "users._id": 1,
+          "users.email": 1,
+          "users.username": 1,
+          "users.name": 1,
+          "users.imageUri": 1,
         },
       },
     ]);
 
-    res.status(200).json({ message: "All Conversations", converstation });
+    res.status(200).json({ message: "All Conversations", conversation });
   } catch (error) {
     const err = handleErrors(error);
     res.status(500).json({ success: false, message: err });
